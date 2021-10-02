@@ -7,9 +7,12 @@ A simple header only loader for ies files. Parses the file and writes its conten
 
 tiny_ies::light ies;
 std::string err;
-if (!tiny_ies::load_ies(file.string(), err, ies)) {
-	// print err
+std::string warn;
+if (!tiny_ies::load_ies(file.string(), err, warn, ies)) {
+	// print loading failed
 }
+if (!err.empty()) // print error
+if (!warn.empty()) // print warning
 ```
 
 ![asd](image.png)

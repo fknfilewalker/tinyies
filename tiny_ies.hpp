@@ -1,10 +1,8 @@
-#pragma once
-
 // +----------------------------------------------------------------------
 // | Project : tinyies.
 // | All rights reserved.
 // +----------------------------------------------------------------------
-// | Copyright (c) 2021.
+// | Copyright (c) Lukas Lipp 2021.
 // +----------------------------------------------------------------------
 // | * Redistribution and use of this software in source and binary forms,
 // |   with or without modification, are permitted provided that the following
@@ -37,6 +35,7 @@
 // | OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // +----------------------------------------------------------------------
 
+#pragma once
 #include <string>
 #include <map>
 #include <vector>
@@ -109,7 +108,7 @@ public:
         float max_candela;
     };
 
-    static bool load_ies(const std::string file, std::string& err_out, light& ies_out) {
+    static bool load_ies(const std::string file, std::string& err_out, std::string& warn_out, light& ies_out) {
         std::ifstream f(file);
         if (!f) {
             err_out = "Failed reading file: " + file;
