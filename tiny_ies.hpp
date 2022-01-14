@@ -108,7 +108,7 @@ public:
         float max_candela;
     };
 
-    static bool load_ies(const std::string file, std::string& err_out, std::string& warn_out, light& ies_out) {
+    static bool load_ies(const std::string& file, std::string& err_out, std::string& warn_out, light& ies_out) {
         std::ifstream f(file);
         if (!f) {
             err_out = "Failed reading file: " + file;
@@ -134,7 +134,7 @@ public:
             if (read_property("TILT=", line, ies_out.tilt)) break;
             read_property(line, ies_out.properties);
         }
-        if (!ies_out.tilt.size()) {
+        if (ies_out.tilt.empty()) {
             err_out = "TILT propertie not found: " + file;
             return false;
         }
