@@ -3,12 +3,12 @@ A simple header only loader for ies files. Parses the file and writes its conten
 
 ## Usage
 ```c++
-#include <tiny_ies.hpp>
+#include "tiny_ies.hpp"
 
 tiny_ies::light ies;
 std::string err;
 std::string warn;
-if (!tiny_ies::load_ies(file.string(), err, warn, ies)) {
+if (!tiny_ies::load_ies(filepath, err, warn, ies)) {
 	// print loading failed
 }
 if (!err.empty()) // print error
