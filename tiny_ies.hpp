@@ -48,6 +48,10 @@
 #define TINYIES_FPN float
 #endif
 
+#ifndef TINYIES_WRITE_PRECISION
+#define TINYIES_WRITE_PRECISION 10
+#endif
+
 class tiny_ies {
 public:
     struct light {
@@ -220,6 +224,69 @@ public:
         }
 #undef NEXT_VALUE
         f.close();
+        return true;
+    }
+
+    static bool write_ies(const std::string& filename, const light& ies) {
+        std::stringstream ss;
+        ss.precision(TINYIES_WRITE_PRECISION);
+
+        /*
+        ** HEADER
+        */
+        ss << "IESNA:" << ies.ies_version << std::endl;
+        for (const auto& [fst, snd] : ies.properties) ss << "[" << fst << "] " << snd << std::endl;
+
+        /*
+        ** DATA
+        */
+        ss << "TILT=" << ies.tilt << std::endl;
+        if (ies.tilt == "INCLUDE") {
+            // <lamp to luminaire geometry> <#tilt angles> <angles> <multiplying factors>
+            ss << ies.lamp_to_luminaire_geometry << " " << ies.number_of_tilt_angles;
+            for (int i = 0; i < ies.number_of_tilt_angles; i++) {
+                ss << ies.tilt_angles[i];
+                if (i < (ies.number_of_tilt_angles - 1)) ss << " ";
+            }
+            for (int i = 0; i < ies.number_of_tilt_angles; i++) {
+                ss << ies.tilt_multiplying_factors[i];
+                if (i < (ies.number_of_tilt_angles - 1)) ss << " ";
+            }
+            ss << std::endl;
+        }
+
+        // <#lamps> <lumen/lamp> <multiplier> <#vertical angles> <#horizontal angles> <photometric type> <units type> <width> <length> <height>
+        ss << ies.number_lights << " " << ies.lumens_per_lamp << " " << ies.multiplier << " ";
+        ss << ies.number_vertical_angles << " " << ies.number_horizontal_angles << " " << ies.photometric_type << " ";
+        ss << ies.units_type << " " << ies.width << " " << ies.length << " " << ies.height << std::endl;
+        // <ballast factor> <future use> <input watts>
+        ss << ies.ballast_factor << " " << ies.future_use << " " << ies.input_watts << std::endl;
+        // <vertical angles>
+        for (int i = 0; i < ies.number_vertical_angles; i++) {
+            ss << ies.vertical_angles[i];
+            if (i < (ies.number_vertical_angles - 1)) ss << " ";
+            else ss << std::endl;
+        }
+        // <horizontal angles>
+        for (int i = 0; i < ies.number_horizontal_angles; i++) {
+            ss << ies.horizontal_angles[i];
+            if (i < (ies.number_horizontal_angles - 1)) ss << " ";
+            else ss << std::endl;
+        }
+        // <candela values for all vertical angles at first horizontal angle>
+        //                                              :
+        // <candela values for all vertical angles at last horizontal angle>
+        const int count = ies.number_vertical_angles * ies.number_horizontal_angles;
+        for (int i = 0; i < count; i++) {
+            ss << ies.candela[i];
+            if (i != 0 && (i + 1) % (ies.number_vertical_angles) == 0) ss << std::endl;
+            else if (i < (count - 1)) ss << " ";
+        }
+
+        std::ofstream file(filename, std::ios::out | std::ios::trunc);
+        if (!file.is_open()) return false;
+        file << ss.rdbuf();
+    	file.close();
         return true;
     }
 
