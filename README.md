@@ -3,8 +3,6 @@ A simple header only loader/writer for ies files. Parses the file and writes its
 
 ## Usage
 ```c++
-// optional: use double precision for loading/writing the file
-#define TINYIES_USE_DOUBLE
 #include "tiny_ies.hpp"
 
 tiny_ies<float>::light ies;
