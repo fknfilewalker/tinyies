@@ -17,7 +17,7 @@ if (!err.empty()) // print error
 if (!warn.empty()) // print warning
 
 // write ies to file
-if (!tiny_ies::write_ies("out.ies", ies, 10 /*optional precision*/)) {
+if (!tiny_ies::write_ies("out.ies", ies, /*optional precision*/ 10)) {
 	// print writing failed
 }
 ```
