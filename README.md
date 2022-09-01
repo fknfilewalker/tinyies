@@ -15,6 +15,11 @@ if (!tiny_ies::load_ies(filepath, err, warn, ies)) {
 }
 if (!err.empty()) // print error
 if (!warn.empty()) // print warning
+
+// write ies to file
+if (!tiny_ies::write_ies("out.ies", ies, 10 /*optional precision*/)) {
+	// print writing failed
+}
 ```
 
 ![asd](image.png)

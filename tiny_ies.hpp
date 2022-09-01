@@ -48,10 +48,6 @@
 #define TINYIES_FPN float
 #endif
 
-#ifndef TINYIES_WRITE_PRECISION
-#define TINYIES_WRITE_PRECISION 10
-#endif
-
 class tiny_ies {
 public:
     struct light {
@@ -225,9 +221,9 @@ public:
         return true;
     }
 
-    static bool write_ies(const std::string& filename, const light& ies) {
+    static bool write_ies(const std::string& filename, const light& ies, const uint32_t precision = std::numeric_limits<float>::max_digits10) {
         std::stringstream ss;
-        ss.precision(TINYIES_WRITE_PRECISION);
+        ss.precision(precision);
 
         /*
         ** HEADER
