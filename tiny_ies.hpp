@@ -42,13 +42,9 @@
 #include <fstream>
 #include <sstream>
 
-#ifdef TINYIES_USE_DOUBLE
-#define TINYIES_FPN double
-#else
-#define TINYIES_FPN float
-#endif
-
+template <typename T>
 class tiny_ies {
+    static_assert(std::is_same<T, float>::value || std::is_same<T, double>::value, "T must be float or double");
 public:
     struct light {
         light() : lamp_to_luminaire_geometry(),
@@ -84,34 +80,34 @@ public:
         /* tilt data */
         int lamp_to_luminaire_geometry;
         int number_of_tilt_angles;
-        std::vector<TINYIES_FPN> tilt_angles;
-        std::vector<TINYIES_FPN> tilt_multiplying_factors;
+        std::vector<T> tilt_angles;
+        std::vector<T> tilt_multiplying_factors;
 
         /* data */
         int number_lights;
         int lumens_per_lamp;
-        TINYIES_FPN multiplier;
+        T multiplier;
         int number_vertical_angles;
         int number_horizontal_angles;
         int photometric_type;
         int units_type;
-        TINYIES_FPN width;
-        TINYIES_FPN length;
-        TINYIES_FPN height;
+        T width;
+        T length;
+        T height;
 
-        TINYIES_FPN ballast_factor;
-        TINYIES_FPN future_use;
-        TINYIES_FPN input_watts;
+        T ballast_factor;
+        T future_use;
+        T input_watts;
 
-        std::vector<TINYIES_FPN> vertical_angles;
-        TINYIES_FPN min_vertical_angle;
-        TINYIES_FPN max_vertical_angle;
-        std::vector<TINYIES_FPN> horizontal_angles;
-        TINYIES_FPN min_horizontal_angle;
-        TINYIES_FPN max_horizontal_angle;
+        std::vector<T> vertical_angles;
+        T min_vertical_angle;
+        T max_vertical_angle;
+        std::vector<T> horizontal_angles;
+        T min_horizontal_angle;
+        T max_horizontal_angle;
 
-        std::vector<TINYIES_FPN> candela;
-        TINYIES_FPN max_candela;
+        std::vector<T> candela;
+        T max_candela;
     };
 
     static bool load_ies(const std::string& file, std::string& err_out, std::string& warn_out, light& ies_out) {
@@ -156,7 +152,7 @@ public:
     	std::stringstream buffer;
         buffer.str(s);
 
-        TINYIES_FPN value;
+        T value;
 #define NEXT_VALUE(name) if (!(buffer >> value)) { err_out = "Error reading <" name "> property: " + file; f.close(); return false; }
 
         // <lamp to luminaire geometry> <#tilt angles> <angles> <multiplying factors>
@@ -221,7 +217,7 @@ public:
         return true;
     }
 
-    static bool write_ies(const std::string& filename, const light& ies, const uint32_t precision = std::numeric_limits<float>::max_digits10) {
+    static bool write_ies(const std::string& filename, const light& ies, const uint32_t precision = std::numeric_limits<T>::max_digits10) {
         std::stringstream ss;
         ss.precision(precision);
 
