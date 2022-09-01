@@ -133,12 +133,13 @@ public:
         // the first line in a valid ies file should be IESNA:
         if (f.good()) {
             std::getline(f, line);
-            if (!read_property("IESNA:", line, ies_out.ies_version)) {
-                err_out = "First line did not start with IESNA: " + file;
-                //return false;
+            if (!read_property("IESNA91", line, ies_out.ies_version)) {
+                warn_out = "Version IESNA91 may not be supported: " + file;
+            }
+            else if (!read_property("IESNA:", line, ies_out.ies_version)) {
+                warn_out = "First line did not start with IESNA: " + file;
             }
         }
-
         // read properties
         while (f.good() && std::getline(f, line)) {
             if (read_property("TILT=", line, ies_out.tilt)) break;
