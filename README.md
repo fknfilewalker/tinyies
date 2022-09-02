@@ -22,7 +22,7 @@ if (!tiny_ies<float>::write_ies("out.ies", ies, /*optional precision*/ 10)) {
 }
 ```
 
-![asd](image.png)
+![example](image.jpg)
 
 ## Features
 * [x] Load IES
