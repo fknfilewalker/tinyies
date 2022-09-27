@@ -28,6 +28,8 @@ SOFTWARE.
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <limits>
+#include <algorithm>
 
 template <typename T>
 class tiny_ies {
@@ -35,22 +37,22 @@ class tiny_ies {
 public:
     struct light {
         light() : lamp_to_luminaire_geometry(),
-    			  number_of_tilt_angles(0),
-    			  number_lights(0),
-    			  lumens_per_lamp(0),
-                  multiplier(0),
-                  number_vertical_angles(0),
-                  number_horizontal_angles(0),
-                  photometric_type(0), units_type(0),
-                  width(0), length(0), height(0),
-                  ballast_factor(0),
-                  future_use(0),
-                  input_watts(0),
-                  min_vertical_angle(0),
-                  max_vertical_angle(0),
-                  min_horizontal_angle(0),
-                  max_horizontal_angle(0),
-                  max_candela(0)
+            number_of_tilt_angles(0),
+            number_lights(0),
+            lumens_per_lamp(0),
+            multiplier(0),
+            number_vertical_angles(0),
+            number_horizontal_angles(0),
+            photometric_type(0), units_type(0),
+            width(0), length(0), height(0),
+            ballast_factor(0),
+            future_use(0),
+            input_watts(0),
+            min_vertical_angle(0),
+            max_vertical_angle(0),
+            min_horizontal_angle(0),
+            max_horizontal_angle(0),
+            max_candela(0)
         {
         }
 
@@ -112,7 +114,7 @@ public:
         // the first line in a valid ies file should be IESNA:
         if (f.good()) {
             std::getline(f, line);
-        	if (!read_property("IESNA", line, ies_out.ies_version)) {
+            if (!read_property("IESNA", line, ies_out.ies_version)) {
                 warn_out = "First line did not start with IESNA " + file;
             }
         }
@@ -136,7 +138,7 @@ public:
         std::replace(s.begin(), s.end(), ',', ' ');
 
         // go through the data
-    	std::stringstream buffer;
+        std::stringstream buffer;
         buffer.str(s);
 
         T value;
@@ -212,7 +214,7 @@ public:
         ** HEADER
         */
         ss << "IESNA:" << ies.ies_version << std::endl;
-        for (const auto& [fst, snd] : ies.properties) ss << "[" << fst << "] " << snd << std::endl;
+        for (const auto& pair : ies.properties) ss << "[" << pair.first << "] " << pair.second << std::endl;
 
         /*
         ** DATA
@@ -263,7 +265,7 @@ public:
         std::ofstream file(filename, std::ios::out | std::ios::trunc);
         if (!file.is_open()) return false;
         file << ss.rdbuf();
-    	file.close();
+        file.close();
         return true;
     }
 
