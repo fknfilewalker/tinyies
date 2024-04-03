@@ -1,10 +1,10 @@
 /*
 MIT License
 
-Copyright(c) 2021 - 2022 Lukas Lipp
+Copyright(c) 2021 - 2024 Lukas Lipp
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this softwareand associated documentation files(the "Software"), to deal
+of this software and associated documentation files(the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and /or sell
 copies of the Software, and to permit persons to whom the Software is
@@ -30,29 +30,30 @@ SOFTWARE.
 #include <sstream>
 #include <limits>
 #include <algorithm>
+#include <cstdint>
 
 template <typename T>
-class tiny_ies {
-    static_assert(std::is_same<T, float>::value || std::is_same<T, double>::value, "T must be float or double");
-public:
+struct tiny_ies {
+    static_assert(std::is_floating_point<T>::value, "T must be floating point");
     struct light {
-        light() : lamp_to_luminaire_geometry(),
-            number_of_tilt_angles(0),
-            number_lights(0),
-            lumens_per_lamp(0),
-            multiplier(0),
-            number_vertical_angles(0),
-            number_horizontal_angles(0),
-            photometric_type(0), units_type(0),
-            width(0), length(0), height(0),
-            ballast_factor(0),
-            future_use(0),
-            input_watts(0),
-            min_vertical_angle(0),
-            max_vertical_angle(0),
-            min_horizontal_angle(0),
-            max_horizontal_angle(0),
-            max_candela(0)
+        light() :
+            lamp_to_luminaire_geometry{},
+            number_of_tilt_angles{},
+            number_lights{},
+            lumens_per_lamp{},
+            multiplier{},
+            number_vertical_angles{},
+            number_horizontal_angles{},
+            photometric_type{}, units_type{},
+            width{}, length{}, height{},
+            ballast_factor{},
+            future_use{},
+            input_watts{},
+            min_vertical_angle{},
+            max_vertical_angle{},
+            min_horizontal_angle{},
+            max_horizontal_angle{},
+            max_candela{}
         {
         }
 
@@ -67,19 +68,19 @@ public:
         ** DATA
         */
         /* tilt data */
-        int lamp_to_luminaire_geometry;
-        int number_of_tilt_angles;
+        uint32_t lamp_to_luminaire_geometry;
+        uint32_t number_of_tilt_angles;
         std::vector<T> tilt_angles;
         std::vector<T> tilt_multiplying_factors;
 
         /* data */
-        int number_lights;
-        int lumens_per_lamp;
+        uint32_t number_lights;
+        int lumens_per_lamp; // in case of absolute photometry the value is -1
         T multiplier;
-        int number_vertical_angles;
-        int number_horizontal_angles;
-        int photometric_type;
-        int units_type;
+        uint32_t number_vertical_angles;
+        uint32_t number_horizontal_angles;
+        uint32_t photometric_type;
+        uint32_t units_type;
         T width;
         T length;
         T height;
@@ -106,7 +107,7 @@ public:
             return false;
         }
 
-        ies_out = light();
+        ies_out = {};
         std::string line;
         /*
         ** HEADER
@@ -131,75 +132,74 @@ public:
         /*
         ** DATA
         */
-        // replace comma with empty space
+        // replace comma with empty space (just in case)
         std::ostringstream oss;
         oss << f.rdbuf();
         std::string s = oss.str();
         std::replace(s.begin(), s.end(), ',', ' ');
 
         // go through the data
-        std::stringstream buffer;
-        buffer.str(s);
+        std::stringstream stream;
+        stream.str(s);
 
-        T value;
-#define NEXT_VALUE(name) if (!(buffer >> value)) { err_out = "Error reading <" name "> property: " + file; f.close(); return false; }
+#define NEXT_VALUE(name, var) if (!store_value(stream, var)) { err_out = "Error reading <" name "> property: " + file; f.close(); return false; }
 
         // <lamp to luminaire geometry> <#tilt angles> <angles> <multiplying factors>
         if (ies_out.tilt == "INCLUDE") {
-            NEXT_VALUE("lamp to luminaire geometry")    ies_out.lamp_to_luminaire_geometry = static_cast<int>(value);
-            NEXT_VALUE("#tilt angles")                  ies_out.number_of_tilt_angles = static_cast<int>(value);
+            NEXT_VALUE("lamp to luminaire geometry", ies_out.lamp_to_luminaire_geometry)
+            NEXT_VALUE("#tilt angles", ies_out.number_of_tilt_angles)
 
-            ies_out.tilt_angles.reserve(ies_out.number_of_tilt_angles);
-            ies_out.tilt_multiplying_factors.reserve(ies_out.number_of_tilt_angles);
-            for (int i = 0; i < ies_out.number_of_tilt_angles; i++) {
-                NEXT_VALUE("angles")        ies_out.tilt_angles.push_back(value);
+            ies_out.tilt_angles.resize(ies_out.number_of_tilt_angles);
+            ies_out.tilt_multiplying_factors.resize(ies_out.number_of_tilt_angles);
+            for (uint32_t i = 0; i < ies_out.number_of_tilt_angles; i++) {
+                NEXT_VALUE("angles", ies_out.tilt_angles[i])
             }
-            for (int i = 0; i < ies_out.number_of_tilt_angles; i++) {
-                NEXT_VALUE("angles")        ies_out.tilt_multiplying_factors.push_back(value);
+            for (uint32_t i = 0; i < ies_out.number_of_tilt_angles; i++) {
+                NEXT_VALUE("angles", ies_out.tilt_multiplying_factors[i])
             }
         }
 
         // <#lamps> <lumen/lamp> <multiplier> <#vertical angles> <#horizontal angles> <photometric type> <units type> <width> <length> <height>
-        NEXT_VALUE("#lamps")                ies_out.number_lights = static_cast<int>(value);
-        NEXT_VALUE("lumens/lamp")           ies_out.lumens_per_lamp = static_cast<int>(value);
-        NEXT_VALUE("multiplier")            ies_out.multiplier = value;
-        NEXT_VALUE("#vertical angles")      ies_out.number_vertical_angles = static_cast<int>(value);
-        NEXT_VALUE("#horizontal angles")    ies_out.number_horizontal_angles = static_cast<int>(value);
-        NEXT_VALUE("photometric type")      ies_out.photometric_type = static_cast<int>(value);
-        NEXT_VALUE("units type")            ies_out.units_type = static_cast<int>(value);
-        NEXT_VALUE("width")                 ies_out.width = value;
-        NEXT_VALUE("length")                ies_out.length = value;
-        NEXT_VALUE("height")                ies_out.height = value;
+        NEXT_VALUE("#lamps", ies_out.number_lights)
+        NEXT_VALUE("lumens/lamp", ies_out.lumens_per_lamp)
+        NEXT_VALUE("multiplier", ies_out.multiplier)
+        NEXT_VALUE("#vertical angles", ies_out.number_vertical_angles)
+        NEXT_VALUE("#horizontal angles", ies_out.number_horizontal_angles)
+        NEXT_VALUE("photometric type", ies_out.photometric_type)
+        NEXT_VALUE("units type", ies_out.units_type)
+        NEXT_VALUE("width", ies_out.width)
+        NEXT_VALUE("length", ies_out.length)
+        NEXT_VALUE("height", ies_out.height)
         // <ballast factor> <future use> <input watts>
-        NEXT_VALUE("ballast factor")        ies_out.ballast_factor = value;
-        NEXT_VALUE("future use")            ies_out.future_use = value;
-        NEXT_VALUE("input watts")           ies_out.input_watts = value;
+        NEXT_VALUE("ballast factor", ies_out.ballast_factor)
+        NEXT_VALUE("future use", ies_out.future_use)
+        NEXT_VALUE("input watts", ies_out.input_watts)
         // <vertical angles>
-        ies_out.min_vertical_angle = 360;
-        ies_out.max_vertical_angle = -360;
-        ies_out.vertical_angles.reserve(ies_out.number_vertical_angles);
-        for (int i = 0; i < ies_out.number_vertical_angles; i++) {
-            NEXT_VALUE("vertical angles")   ies_out.vertical_angles.push_back(value);
-            if (value < ies_out.min_vertical_angle) ies_out.min_vertical_angle = value;
-            if (value > ies_out.max_vertical_angle) ies_out.max_vertical_angle = value;
+        ies_out.min_vertical_angle = std::numeric_limits<T>::max();
+        ies_out.max_vertical_angle = -std::numeric_limits<T>::max();
+        ies_out.vertical_angles.resize(ies_out.number_vertical_angles);
+        for (uint32_t i = 0; i < ies_out.number_vertical_angles; i++) {
+            NEXT_VALUE("vertical angles", ies_out.vertical_angles[i])
+        	ies_out.min_vertical_angle = std::min(ies_out.min_vertical_angle, ies_out.vertical_angles[i]);
+            ies_out.max_vertical_angle = std::max(ies_out.max_vertical_angle, ies_out.vertical_angles[i]);
         }
         // <horizontal angles>
-        ies_out.min_horizontal_angle = 360;
-        ies_out.max_horizontal_angle = -360;
-        ies_out.horizontal_angles.reserve(ies_out.number_horizontal_angles);
-        for (int i = 0; i < ies_out.number_horizontal_angles; i++) {
-            NEXT_VALUE("horizontal angles") ies_out.horizontal_angles.push_back(value);
-            if (value < ies_out.min_horizontal_angle) ies_out.min_horizontal_angle = value;
-            if (value > ies_out.max_horizontal_angle) ies_out.max_horizontal_angle = value;
+        ies_out.min_horizontal_angle = std::numeric_limits<T>::max();
+        ies_out.max_horizontal_angle = -std::numeric_limits<T>::max();
+        ies_out.horizontal_angles.resize(ies_out.number_horizontal_angles);
+        for (uint32_t i = 0; i < ies_out.number_horizontal_angles; i++) {
+            NEXT_VALUE("horizontal angles", ies_out.horizontal_angles[i])
+        	ies_out.min_horizontal_angle = std::min(ies_out.min_horizontal_angle, ies_out.horizontal_angles[i]);
+            ies_out.max_horizontal_angle = std::max(ies_out.max_horizontal_angle, ies_out.horizontal_angles[i]);
         }
         // <candela values for all vertical angles at first horizontal angle>
         //                                              :
         // <candela values for all vertical angles at last horizontal angle>
-        ies_out.candela.reserve(static_cast<uint64_t>(ies_out.number_vertical_angles) * static_cast<uint64_t>(ies_out.number_horizontal_angles));
-        ies_out.max_candela = 0;
-        for (int i = 0; i < ies_out.number_vertical_angles * ies_out.number_horizontal_angles; i++) {
-            NEXT_VALUE("candela values")    ies_out.candela.push_back(value);
-            if (ies_out.max_candela < value) ies_out.max_candela = value;
+        ies_out.candela.resize(static_cast<uint64_t>(ies_out.number_vertical_angles) * static_cast<uint64_t>(ies_out.number_horizontal_angles));
+        ies_out.max_candela = 0.0;
+        for (uint32_t i = 0; i < ies_out.number_vertical_angles * ies_out.number_horizontal_angles; i++) {
+            NEXT_VALUE("candela values", ies_out.candela[i])
+        	ies_out.max_candela = std::max(ies_out.max_candela, ies_out.candela[i]);
         }
 #undef NEXT_VALUE
         f.close();
@@ -294,5 +294,10 @@ private:
         if (!read_property(attribute + stop_delim, line, property)) return false;
         property_map.insert({ attribute, property });
         return true;
+    }
+
+    template <typename U>
+    static bool store_value(std::stringstream& stream, U& out) {
+        return static_cast<bool>(stream >> out);
     }
 };
